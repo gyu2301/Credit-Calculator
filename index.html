@@ -400,16 +400,16 @@
       "4.5": [
         { letter: "A+", point: 4.5 },
         { letter: "A0", point: 4.0 },
-        { letter: "A-", point: 3.7 },
+        { letter: "A-", point: 3.5 },
         { letter: "B+", point: 3.5 },
         { letter: "B0", point: 3.0 },
-        { letter: "B-", point: 2.7 },
+        { letter: "B-", point: 2.5 },
         { letter: "C+", point: 2.5 },
         { letter: "C0", point: 2.0 },
-        { letter: "C-", point: 1.7 },
+        { letter: "C-", point: 1.5 },
         { letter: "D+", point: 1.5 },
         { letter: "D0", point: 1.0 },
-        { letter: "D-", point: 0.7 },
+        { letter: "D-", point: 0.5 },
         { letter: "F", point: 0.0 }
       ]
     };
@@ -531,7 +531,7 @@
         item.innerHTML = `
           <div>
             <div class="course-name">${escapeHTML(course.name)}</div>
-            <div class="course-meta">${Number(course.credit).toFixed(1).replace(".0", "")}학점 · ${course.letter} (${gradePoint.toFixed(1)})</div>
+            <div class="course-meta">${Number(course.credit).toFixed(1).replace(".0", "")}학점 · ${course.letter} (${gradePoint.toFixed(1)})${getUnsupportedGradeNote(course.letter)}</div>
           </div>
           <div class="badge">${Number(course.credit).toFixed(1).replace(".0", "")}학점</div>
           <div class="badge">${course.letter} ${gradePoint.toFixed(1)}</div>
@@ -542,6 +542,11 @@
       });
 
       calculateSummary();
+    }
+
+    function getUnsupportedGradeNote(letter) {
+      const exists = getCurrentGradeTable().some(item => item.letter === letter);
+      return exists ? "" : " · 현재 기준에 없는 등급";
     }
 
     function escapeHTML(text) {
