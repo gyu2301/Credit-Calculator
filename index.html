@@ -179,7 +179,8 @@
       top: 22px;
     }
 
-    .total-input-box {
+    .total-input-box,
+    .scale-box {
       margin-bottom: 18px;
     }
 
@@ -265,10 +266,7 @@
         grid-template-columns: 1fr;
       }
 
-      .badge {
-        width: fit-content;
-      }
-
+      .badge,
       .delete-button {
         width: fit-content;
       }
@@ -279,7 +277,7 @@
   <main class="container">
     <header>
       <h1>대학생 학점 계산기</h1>
-      <p>들은 과목을 입력하면 현재까지 이수한 학점, 4.3 만점 기준 평점, 졸업까지 남은 학점을 자동으로 계산합니다.</p>
+      <p>들은 과목을 입력하면 현재까지 이수한 학점, 선택한 만점 기준 평점, 졸업까지 남은 학점을 자동으로 계산합니다.</p>
     </header>
 
     <section class="layout">
@@ -299,21 +297,7 @@
 
           <div>
             <label for="grade">점수</label>
-            <select id="grade" required>
-              <option value="4.3">A+ (4.3)</option>
-              <option value="4.0">A0 (4.0)</option>
-              <option value="3.7">A- (3.7)</option>
-              <option value="3.3">B+ (3.3)</option>
-              <option value="3.0">B0 (3.0)</option>
-              <option value="2.7">B- (2.7)</option>
-              <option value="2.3">C+ (2.3)</option>
-              <option value="2.0">C0 (2.0)</option>
-              <option value="1.7">C- (1.7)</option>
-              <option value="1.3">D+ (1.3)</option>
-              <option value="1.0">D0 (1.0)</option>
-              <option value="0.7">D- (0.7)</option>
-              <option value="0">F (0.0)</option>
-            </select>
+            <select id="grade" required></select>
           </div>
 
           <button class="add-button" type="submit">추가</button>
@@ -330,6 +314,15 @@
           <input id="requiredCredits" type="number" min="0" step="1" value="130" />
         </div>
 
+        <div class="scale-box">
+          <label for="gradeScale">평점 만점 기준</label>
+          <select id="gradeScale">
+            <option value="4.3">4.3 만점</option>
+            <option value="4.0">4.0 만점</option>
+            <option value="4.5">4.5 만점</option>
+          </select>
+        </div>
+
         <div class="summary-grid">
           <div class="summary-item">
             <div class="summary-label">입력된 총 이수학점</div>
@@ -342,7 +335,7 @@
           </div>
 
           <div class="summary-item">
-            <div class="summary-label">평균 평점 / 4.3</div>
+            <div class="summary-label">평균 평점</div>
             <div id="gpa" class="summary-value">0.00</div>
           </div>
         </div>
@@ -360,7 +353,7 @@
         <button id="clearButton" class="clear-button" type="button">전체 삭제</button>
 
         <p class="note">
-          입력한 과목 정보는 현재 브라우저에 자동 저장됩니다. 같은 브라우저에서 다시 열면 이전 입력값이 유지됩니다.
+          입력한 과목 정보와 평점 기준은 현재 브라우저에 자동 저장됩니다. 같은 브라우저에서 다시 열면 이전 입력값이 유지됩니다.
         </p>
       </aside>
     </section>
@@ -369,11 +362,63 @@
   <script>
     const STORAGE_KEY = "collegeCreditCalculatorCourses";
     const REQUIRED_KEY = "collegeCreditCalculatorRequiredCredits";
+    const SCALE_KEY = "collegeCreditCalculatorGradeScale";
+
+    // 만점 기준별 성적표입니다.
+    // 학교마다 환산표가 다를 수 있으므로, 필요하면 이 부분만 수정하면 됩니다.
+    const gradeTables = {
+      "4.3": [
+        { letter: "A+", point: 4.3 },
+        { letter: "A0", point: 4.0 },
+        { letter: "A-", point: 3.7 },
+        { letter: "B+", point: 3.3 },
+        { letter: "B0", point: 3.0 },
+        { letter: "B-", point: 2.7 },
+        { letter: "C+", point: 2.3 },
+        { letter: "C0", point: 2.0 },
+        { letter: "C-", point: 1.7 },
+        { letter: "D+", point: 1.3 },
+        { letter: "D0", point: 1.0 },
+        { letter: "D-", point: 0.7 },
+        { letter: "F", point: 0.0 }
+      ],
+      "4.0": [
+        { letter: "A+", point: 4.0 },
+        { letter: "A0", point: 4.0 },
+        { letter: "A-", point: 3.7 },
+        { letter: "B+", point: 3.3 },
+        { letter: "B0", point: 3.0 },
+        { letter: "B-", point: 2.7 },
+        { letter: "C+", point: 2.3 },
+        { letter: "C0", point: 2.0 },
+        { letter: "C-", point: 1.7 },
+        { letter: "D+", point: 1.3 },
+        { letter: "D0", point: 1.0 },
+        { letter: "D-", point: 0.7 },
+        { letter: "F", point: 0.0 }
+      ],
+      "4.5": [
+        { letter: "A+", point: 4.5 },
+        { letter: "A0", point: 4.0 },
+        { letter: "A-", point: 3.7 },
+        { letter: "B+", point: 3.5 },
+        { letter: "B0", point: 3.0 },
+        { letter: "B-", point: 2.7 },
+        { letter: "C+", point: 2.5 },
+        { letter: "C0", point: 2.0 },
+        { letter: "C-", point: 1.7 },
+        { letter: "D+", point: 1.5 },
+        { letter: "D0", point: 1.0 },
+        { letter: "D-", point: 0.7 },
+        { letter: "F", point: 0.0 }
+      ]
+    };
 
     const courseForm = document.getElementById("courseForm");
     const courseNameInput = document.getElementById("courseName");
     const creditInput = document.getElementById("credit");
     const gradeSelect = document.getElementById("grade");
+    const gradeScaleSelect = document.getElementById("gradeScale");
     const requiredCreditsInput = document.getElementById("requiredCredits");
     const courseList = document.getElementById("courseList");
     const completedCreditsEl = document.getElementById("completedCredits");
@@ -385,32 +430,78 @@
 
     let courses = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
     const savedRequiredCredits = localStorage.getItem(REQUIRED_KEY);
+    const savedScale = localStorage.getItem(SCALE_KEY);
 
     if (savedRequiredCredits !== null) {
       requiredCreditsInput.value = savedRequiredCredits;
     }
 
-    function getGradeText(value) {
-      const selectedOption = [...gradeSelect.options].find(option => Number(option.value) === Number(value));
-      return selectedOption ? selectedOption.textContent : `${Number(value).toFixed(1)}점`;
+    if (savedScale !== null && gradeTables[savedScale]) {
+      gradeScaleSelect.value = savedScale;
+    }
+
+    // 예전 버전에서 저장된 { grade: 4.3 } 형태를 { letter: "A+" } 형태로 변환합니다.
+    courses = courses.map(course => {
+      if (course.letter) return course;
+
+      const oldPoint = Number(course.grade);
+      const oldGrade = gradeTables["4.3"].find(item => Number(item.point) === oldPoint);
+
+      return {
+        name: course.name,
+        credit: course.credit,
+        letter: oldGrade ? oldGrade.letter : "F"
+      };
+    });
+
+    function getCurrentScale() {
+      return gradeScaleSelect.value;
+    }
+
+    function getCurrentGradeTable() {
+      return gradeTables[getCurrentScale()];
+    }
+
+    function getGradePoint(letter) {
+      const grade = getCurrentGradeTable().find(item => item.letter === letter);
+      return grade ? grade.point : 0;
+    }
+
+    function fillGradeOptions() {
+      const previousLetter = gradeSelect.value || "A+";
+      gradeSelect.innerHTML = "";
+
+      getCurrentGradeTable().forEach(item => {
+        const option = document.createElement("option");
+        option.value = item.letter;
+        option.textContent = `${item.letter} (${item.point.toFixed(1)})`;
+        gradeSelect.appendChild(option);
+      });
+
+      const stillExists = getCurrentGradeTable().some(item => item.letter === previousLetter);
+      gradeSelect.value = stillExists ? previousLetter : "A+";
     }
 
     function saveData() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(courses));
       localStorage.setItem(REQUIRED_KEY, requiredCreditsInput.value || "0");
+      localStorage.setItem(SCALE_KEY, getCurrentScale());
     }
 
     function calculateSummary() {
       const requiredCredits = Number(requiredCreditsInput.value) || 0;
       const completedCredits = courses.reduce((sum, course) => sum + Number(course.credit), 0);
-      const weightedScore = courses.reduce((sum, course) => sum + Number(course.credit) * Number(course.grade), 0);
+      const weightedScore = courses.reduce((sum, course) => {
+        return sum + Number(course.credit) * getGradePoint(course.letter);
+      }, 0);
+
       const gpa = completedCredits > 0 ? weightedScore / completedCredits : 0;
       const remainingCredits = Math.max(requiredCredits - completedCredits, 0);
       const progress = requiredCredits > 0 ? Math.min((completedCredits / requiredCredits) * 100, 100) : 0;
 
       completedCreditsEl.textContent = completedCredits.toFixed(1).replace(".0", "");
       remainingCreditsEl.textContent = remainingCredits.toFixed(1).replace(".0", "");
-      gpaEl.textContent = gpa.toFixed(2);
+      gpaEl.textContent = `${gpa.toFixed(2)} / ${Number(getCurrentScale()).toFixed(1)}`;
       progressPercentEl.textContent = `${progress.toFixed(1).replace(".0", "")}%`;
       progressFillEl.style.width = `${progress}%`;
 
@@ -435,14 +526,15 @@
       courses.forEach((course, index) => {
         const item = document.createElement("div");
         item.className = "course-item";
+        const gradePoint = getGradePoint(course.letter);
 
         item.innerHTML = `
           <div>
             <div class="course-name">${escapeHTML(course.name)}</div>
-            <div class="course-meta">${Number(course.credit).toFixed(1).replace(".0", "")}학점 · ${getGradeText(course.grade)}</div>
+            <div class="course-meta">${Number(course.credit).toFixed(1).replace(".0", "")}학점 · ${course.letter} (${gradePoint.toFixed(1)})</div>
           </div>
           <div class="badge">${Number(course.credit).toFixed(1).replace(".0", "")}학점</div>
-          <div class="badge">${Number(course.grade).toFixed(1)}</div>
+          <div class="badge">${course.letter} ${gradePoint.toFixed(1)}</div>
           <button class="delete-button" type="button" data-index="${index}">삭제</button>
         `;
 
@@ -466,19 +558,20 @@
 
       const name = courseNameInput.value.trim();
       const credit = Number(creditInput.value);
-      const grade = Number(gradeSelect.value);
+      const letter = gradeSelect.value;
 
-      if (!name || credit <= 0 || Number.isNaN(grade)) {
+      if (!name || credit <= 0 || !letter) {
         alert("강의명, 학점, 점수를 올바르게 입력하세요.");
         return;
       }
 
-      courses.push({ name, credit, grade });
+      courses.push({ name, credit, letter });
       saveData();
       renderCourses();
 
       courseForm.reset();
-      gradeSelect.value = "4.3";
+      fillGradeOptions();
+      gradeSelect.value = "A+";
       courseNameInput.focus();
     });
 
@@ -496,6 +589,12 @@
       calculateSummary();
     });
 
+    gradeScaleSelect.addEventListener("change", () => {
+      fillGradeOptions();
+      saveData();
+      renderCourses();
+    });
+
     clearButton.addEventListener("click", () => {
       const confirmed = confirm("입력된 과목을 모두 삭제할까요?");
       if (!confirmed) return;
@@ -505,6 +604,8 @@
       renderCourses();
     });
 
+    fillGradeOptions();
+    saveData();
     renderCourses();
   </script>
 </body>
